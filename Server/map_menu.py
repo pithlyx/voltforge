@@ -1,7 +1,7 @@
 # Importing necessary libraries and modules
 import cmd
 import sys
-from proc_map import Map, plot_all_samples, plot_samples_in_radius
+from proc_map import Map, plot_all_samples, plot_samples_in_radius, plot_perlin_noise
 
 # Define a class MapCmd that extends from cmd.Cmd
 
@@ -66,9 +66,36 @@ class MapCmd(cmd.Cmd):
                 return
             # Plot the samples within a radius of a point
             plot_samples_in_radius(self.map, [x, y], radius, stage)
+            # Plot the Perlin noise map
+            plot_perlin_noise(
+                self.map, [x, y], 500, .01, 1, 1, plot_name='perlin_noise')
         else:
             # Handle the case where the number of arguments is incorrect
             print("Invalid number of arguments.")
+
+    def do_plot_perlin_noise(self, args):
+        """Command to plot the Perlin noise map.
+
+        Args:
+            args (str): The arguments string, expected to be "x y radius frequency octaves persistence".
+        """
+        # Split the arguments string into a list
+        args = args.split()
+        # Check if the number of arguments is correct
+        if len(args) != 6:
+            print("Invalid number of arguments.")
+            return
+        try:
+            # Convert the arguments to the appropriate data types
+            x, y, radius, frequency, octaves, persistence = map(float, args)
+        except ValueError:
+            # Handle the case where the arguments cannot be converted to appropriate data types
+            print(
+                "Invalid arguments. Coordinates, radius, frequency, octaves, and persistence must be numbers.")
+            return
+        # Plot the Perlin noise map
+        plot_perlin_noise(self.map, [x, y], radius, frequency, int(
+            octaves), persistence, plot_name='perlin_noise')
 
     def do_exit(self, args):
         """Command to exit the command line interface.

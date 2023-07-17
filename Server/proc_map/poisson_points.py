@@ -112,17 +112,4 @@ if __name__ == "__main__":
     # Generate Poisson disc samples
     samples = poisson_disc_samples(
         width, height, r, data_type='int', seed=None)
-
-    # These two lines refer to functions that are not defined in this script. They would have to be defined elsewhere in order to use them.
-    kd_tree = build_kd_tree(samples)  # Build a kd-tree from the samples
-
-    query_pt = [50, 50]  # A point of interest
-    radius = 15  # Radius around the point of interest
-    # Query points within the radius around the point of interest
-    nearby_points_indices = query_points(kd_tree, query_pt, radius)
-    # Get the actual points from their indices
-    nearby_points = [samples[i] for i in nearby_points_indices]
-
-    # Print the points within the radius around the point of interest
-    print("Points within radius {} of {}: {}".format(
-        radius, query_pt, nearby_points))
+    print(samples)

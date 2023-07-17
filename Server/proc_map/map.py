@@ -3,7 +3,7 @@ from scipy.spatial import cKDTree
 from proc_map.poisson_points import poisson_disc_samples
 import numpy as np
 from proc_map.resources import resources
-
+from noise import snoise2
 # Define a class called "Map"
 
 
@@ -64,3 +64,35 @@ class Map:
         _, index = self.kd_tree.query(point)
         # Return the resource assigned to the nearest sample point at the given stage
         return self.maps[stage][index]
+
+    def generate_perlin_noise(self, point, radius, frequency, octaves, persistence):
+        """Generate a Perlin noise map around a given point.
+
+        Args:
+            point (list): The center point of the Perlin noise map.
+            radius (float): The radius of the Perlin noise map.
+            frequency (float): The frequency of the Perlin noise.
+            octaves (int): The number of octaves in the Perlin noise.
+            persistence (float): The persistence value of the Perlin noise.
+
+        Returns:
+            np.ndarray: The generated Perlin noise map.
+        """
+        # Calculate the dimensions of the noise map
+        map_width = int(radius * 2)
+        map_height = int(radius * 2)
+
+        # Calculate the starting coordinates for generating the noise
+        start_x = int(point[0] - radius)
+        start_y = int(point[1] - radius)
+
+        # Generate the Perlin noise map
+        noise_map = np.zeros((map_width, map_height))
+        for y in range(map_height):
+            for x in range(map_width):
+                nx = start_x + x
+                ny = start_y + y
+                noise_map[x, y] = snoise2(
+                    nx * frequency, ny * frequency, octaves=octaves, persistence=persistence)
+
+        return noise_map

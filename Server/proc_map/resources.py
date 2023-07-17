@@ -11,3 +11,10 @@ resources = {
     'Gold': {'stage': [0, 0, 0, 0.05], 'color': 'gold'},
     'Lithium': {'stage': [0, 0, 0, 0.05], 'color': 'purple'}
 }
+# Define the key for the Perlin noise map
+overworld = {
+    'Water': {'range': (-1, -0.5), 'color': 'blue'},
+    'Sand': {'range': (-0.5, -0.3), 'color': 'yellow'},
+    'Grass': {'range': (-0.3, 0.4), 'color': 'green'},
+    'Forest': {'range': (0.4, 1.0), 'color': 'darkgreen'}
+}

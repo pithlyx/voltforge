@@ -1,8 +1,9 @@
 # Import necessary libraries
 from scipy.spatial import Voronoi
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from proc_map.resources import resources
+from proc_map.resources import resources, overworld
 
 # Function to plot all samples on the map
 
@@ -120,3 +121,42 @@ def plot_voronoi(vor, colors, labels, point, radius):
 
     # Save the plot as a PNG file
     plt.savefig(f"./img/voronoi-{point[0]}-{point[1]}-{radius}.png")
+
+
+def plot_perlin_noise(map_obj, point, radius, frequency, octaves, persistence, overworld=overworld, plot_name='test'):
+    """Plot a Perlin noise map with terrain colors based on the key.
+
+    Args:
+        map_obj (Map): The map object.
+        point (list): The center point of the Perlin noise map.
+        radius (float): The radius of the Perlin noise map.
+        frequency (float): The frequency of the Perlin noise.
+        octaves (int): The number of octaves in the Perlin noise.
+        persistence (float): The persistence value of the Perlin noise.
+        overworld (dict): The key for the Perlin noise map with terrain types and colors.
+        plot_name (str, optional): The name of the plot. Defaults to 'test'.
+    """
+    # Generate the Perlin noise map
+    noise_map = map_obj.generate_perlin_noise(
+        point, radius, frequency, octaves, persistence)
+
+    # Create a new figure and a set of subplots
+    fig, ax = plt.subplots()
+
+    # Plot the Perlin noise map with terrain colors based on the key
+    img = np.zeros((noise_map.shape[0], noise_map.shape[1], 3))
+    for i in range(noise_map.shape[0]):
+        for j in range(noise_map.shape[1]):
+            for terrain, terrain_info in overworld.items():
+                lower, upper = terrain_info['range']
+                if lower <= noise_map[i, j] < upper:
+                    img[i, j, :] = matplotlib.colors.to_rgb(
+                        terrain_info['color'])
+                    break
+    ax.imshow(img, origin='lower')
+
+    # Set the aspect ratio of the plot to be equal
+    ax.set_aspect('equal')
+
+    # Save the plot as a PNG file
+    plt.savefig(f"./img/perlin-noise-{plot_name}.png")
