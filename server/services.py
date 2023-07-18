@@ -32,8 +32,9 @@ db = SQLAlchemy(metadata=metadata)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = connection_string
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.json.compact = False
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+app.config['SQLALCHEMY_ECHO'] = True
+app.json.compact = True
 
 migrate = Migrate(app, db)
 

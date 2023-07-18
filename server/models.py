@@ -4,6 +4,7 @@ import uuid
 from sqlalchemy import event
 from sqlalchemy.orm import validates
 from sqlalchemy.dialects.postgresql import UUID, JSON, ARRAY
+from sqlalchemy.ext.mutable import MutableList
 from services import db, bcrypt, cipher_suite
 from sqlalchemy_serializer import SerializerMixin
 from flask_login import UserMixin
@@ -18,6 +19,7 @@ class User(UserMixin, db.Model, SerializerMixin):
     api_key = db.Column(db.String, unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'))
+    position = db.Column(JSON)
 
     def auth(self, password=None, api_key=None):
         if password:
@@ -45,12 +47,8 @@ class City(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    chunk = db.Column(ARRAY(db.Integer))
-    relative_pos = db.Column(ARRAY(db.Integer))
     upgraded_at = db.Column(db.DateTime)
     level = db.Column(db.Integer)
-    resources = db.Column(JSON)
-    online = db.Column(db.Boolean)
     updated = db.Column(db.DateTime)
     users = db.relationship('User', backref='cities', lazy=True)
     outposts = db.relationship('Outpost', backref='cities', lazy=True)
@@ -61,8 +59,7 @@ class Outpost(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'))
-    chunk = db.Column(ARRAY(db.Integer))
-    relative_pos = db.Column(ARRAY(db.Integer))
+    coord = db.Column(ARRAY(db.Integer))
     level = db.Column(db.Integer)
     resources = db.Column(JSON)
     # Update relationship name

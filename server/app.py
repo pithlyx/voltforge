@@ -9,7 +9,8 @@ from flask_restful import Api, Resource
 from flask_migrate import Migrate
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy.orm.exc import NoResultFound
-
+from datetime import datetime, timedelta, timezone
+import numpy as np
 dotenv.load_dotenv()
 
 server_port = os.getenv('SRV_PORT')
@@ -24,18 +25,15 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
+    if current_user.is_authenticated:
+        return make_response(jsonify({'message': 'Already logged in!'}), 400)
     try:
-        if api_key := request.headers.get('Authorization'):
-            encoded_key = encode_key(api_key)
-            user = User.query.filter_by(api_key=encoded_key).one()
-            login_user(user)
-        else:
-            # authenticate using username and password
-            user = User.query.filter_by(username=username).one()
-            if not user.auth(password=password):
-                return make_response(jsonify({'message': 'Invalid credentials!'}), 400)
-            login_user(user)
-            user.api_key = user.get_key()
+        # authenticate using username and password
+        user = User.query.filter_by(username=username).one()
+        if not user.auth(password=password):
+            return make_response(jsonify({'message': 'Invalid credentials!'}), 400)
+        login_user(user, remember=True)
+        user.api_key = user.get_key()
         return make_response(jsonify({'message': 'Login successful!', 'user': user.to_dict()}), 200)
     except NoResultFound:
         return make_response(jsonify({'message': 'Invalid credentials!'}), 400)
@@ -43,20 +41,16 @@ def login():
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    if auth_header := request.headers.get('Authorization'):
-        api_key = auth_header.split(" ")[1]
-        # encrypt the provided API key
-        encrypted_api_key = cipher_suite.encrypt(api_key.encode()).decode()
-        print(encrypted_api_key)
-        if user := User.query.filter_by(api_key=encrypted_api_key).first():
-            logout_user()
-            return make_response(jsonify({'message': 'Logout successful!'}), 200)
-    return make_response(jsonify({'message': 'Invalid credentials!'}), 400)
+    if not current_user.is_authenticated:
+        return make_response(jsonify({'message': 'Not logged in!'}), 400)
+    logout_user()
+    return make_response(jsonify({'message': 'Logout successful!'}), 200)
 
 
 @app.route('/users', methods=['GET', 'POST'])
 def create_user():
     if request.method == 'GET':
+        print("getting users")
         users = User.query.all()
         return make_response(jsonify({'users': [user.to_dict() for user in users]}), 200)
 
@@ -66,10 +60,13 @@ def create_user():
             username = data['username']
             password = data['password']
             email = data['email']
+            rand_pos = [np.random.randint(5000), np.random.randint(5000)]
             if User.query.filter_by(username=username).first():
                 return make_response(jsonify({'message': 'User already exists!'}), 400)
             else:
-                user = User(username=username, password=password, email=email)
+                user = User(username=username, password=password,
+                            email=email, position=rand_pos)
+                print(user.position)
                 db.session.add(user)
                 db.session.commit()
                 user.api_key = user.get_key()
@@ -77,15 +74,34 @@ def create_user():
                                               'user': user.to_dict()}), 201)
         except KeyError:
             return make_response(jsonify({'message': 'Invalid request!'}), 400)
+        except Exception as e:
+            return make_response(jsonify({'message': f'Error: {e}'}), 400)
 
 
-@app.route('/map/x/y', methods=['GET'])
-def get_map():
-    x = request.args.get('x')
-    y = request.args.get('y')
-    return make_response(jsonify({'message': f'x: {x}, y: {y}'}), 200)
+@app.route('/map', methods=['GET', 'POST'])
+@login_required
+def handle_map():
+    if request.method == 'GET':
+        from proc_map import Map
+        m = Map()
+        x = int(request.args.get('x') or current_user.position[0])
+        y = int(request.args.get('y') or current_user.position[1])
+        r = int(request.args.get('r') or "50")
+        region = m.get_region(x, y, r)
+        return make_response(jsonify({"x": x,
+                                      "y": y,
+                                      "map": region}), 200)
+    if request.method == 'POST':
+        from proc_map import Map
+        m = Map()
+        region = m.get_region(int(x), int(y), 20)
+        return make_response(jsonify({"x": x,
+                                      "y": y,
+                                      "r": r,
+                                      "map": region}), 200)
 
 
+@app.route('/init ')
 @app.route('/', methods=['GET'])
 def index():
     return make_response(jsonify({'message': 'Hello world!'}), 200)

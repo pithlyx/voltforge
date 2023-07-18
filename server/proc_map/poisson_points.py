@@ -1,51 +1,33 @@
-# Import necessary libraries
 import numpy as np
 from collections import deque
 import random
+# from test import profile, write_profiles_to_file
 
 
-def minkowski_distance(p1, p2, p=2):
+def euclidean_distance(p1, p2):
     """
-    Compute the Minkowski distance between two points.
-
-    Args:
-        p1 (np.array): The first point.
-        p2 (np.array): The second point.
-        p (int, optional): The order of the Minkowski distance. Defaults to 2.
-
-    Returns:
-        float: The Minkowski distance between the two points.
+    Compute the Euclidean distance between two points.
     """
-    return np.sum(np.abs(p1 - p2) ** p) ** (1 / p)
+    return np.sqrt(np.sum((p1 - p2) ** 2))
 
 
-def poisson_disc_samples(width, height, r, seed=None, k=5, p=2, data_type='float'):
+# @profile
+def poisson_disc_samples(width, height, r, seed=None, k=5, data_type='float'):
     """
-    Generate Poisson disc samples.
-
-    Args:
-        width (int): The width of the area to generate samples in.
-        height (int): The height of the area to generate samples in.
-        r (float): The minimum distance between samples.
-        seed (int, optional): The seed for the random number generator. Defaults to None.
-        k (int, optional): The number of new points to generate around each point. Defaults to 5.
-        p (int, optional): The order of the Minkowski distance used in the generation of samples. Defaults to 2.
-        data_type (str, optional): The data type of the returned samples. Defaults to 'float'.
-
-    Returns:
-        list or np.array: The generated samples. The data type of the samples depends on the `data_type` argument.
+    Generate Poisson disc samples using a more efficient algorithm.
     """
     # If no seed is provided, generate a random seed
-    seed = seed if seed else random.randint(0, 1000000)
+    seed = seed or random.randint(0, 1000000)
     random.seed(seed)  # Seed the random number generator
     print("Seed: {}".format(seed))
 
     tau = 2 * np.pi  # Constant for 2*pi
     cell_size = r / np.sqrt(2)  # The size of each cell in the grid
-    # The number of cells along the width
+
+    # The number of cells along the width and height
     grid_width = int(np.ceil(width / cell_size))
-    # The number of cells along the height
     grid_height = int(np.ceil(height / cell_size))
+
     # Initialize the grid with None
     grid = [[None for _ in range(grid_height)] for _ in range(grid_width)]
 
@@ -53,52 +35,62 @@ def poisson_disc_samples(width, height, r, seed=None, k=5, p=2, data_type='float
     def grid_coords(p):
         return int(p[0] // cell_size), int(p[1] // cell_size)
 
-    # Function to check if a point can be placed at a position without violating the minimum distance constraint
-    def fits(p):
-        gx, gy = grid_coords(p)  # Get the grid coordinates of the point
-        # Check cells within a 2-cell distance
-        for x in range(max(gx - 2, 0), min(gx + 3, grid_width)):
-            for y in range(max(gy - 2, 0), min(gy + 3, grid_height)):
-                # If the cell is occupied and the distance to the point in the cell is less than r, return False
-                if grid[x][y] is not None and minkowski_distance(p, grid[x][y]) <= r:
-                    return False
-        return True  # If no violations are found, return True
-
     # Generate a random initial point
     p = np.array([width * random.random(), height * random.random()])
-    queue = deque([p])  # Initialize a deque with the initial point
-    gx, gy = grid_coords(p)  # Get the grid coordinates of the initial point
-    grid[gx][gy] = p  # Place the initial point on the grid
 
-    # Continue generating points until the queue is empty
-    while queue:
-        # Randomly select an index in the queue
-        qi = random.randint(0, len(queue) - 1)
-        qx, qy = queue[qi]  # Get the point at the selected index
-        # Rotate the queue so that the selected point is at the beginning
-        queue.rotate(-qi)
-        queue.popleft()  # Remove the selected point from the queue
-        # Generate k new points around the selected point
+    # The active list is implemented as a deque for efficient pops from the end
+    active_list = deque([p])
+
+    # The initial point is added to the grid
+    gx, gy = grid_coords(p)
+    grid[gx][gy] = p
+
+    # The result list of points starts with the initial point
+    points = [p]
+
+    # While there are still points in the active list
+    while active_list:
+        # Randomly select a point from the active list
+        idx = random.randint(0, len(active_list) - 1)
+        # Swap the selected point with the one at the end of the active list
+        active_list[idx], active_list[-1] = active_list[-1], active_list[idx]
+        # Pop the selected point from the active list
+        p = active_list.pop()
+
+        # For each new candidate point around the selected point
         for _ in range(k):
-            alpha = tau * random.random()  # Random angle
-            # Random distance within the annulus of inner radius r and outer radius 2r
+            # Generate a random point within the annulus around the selected point
+            alpha = tau * random.random()
             d = r * np.sqrt(3 * random.random() + 1)
-            px, py = qx + d * np.cos(alpha), qy + d * \
-                np.sin(alpha)  # New point
-            # If the new point is outside the area, skip it
-            if not (0 <= px < width and 0 <= py < height):
-                continue
-            p = np.array([px, py])  # Create a numpy array for the new point
-            # If the new point doesn't fit into the grid, skip it
-            if not fits(p):
-                continue
-            queue.append(p)  # Add the new point to the end of the queue
-            # Get the grid coordinates of the new point
-            gx, gy = grid_coords(p)
-            grid[gx][gy] = p  # Place the new point on the grid
+            q = p + d * np.array([np.cos(alpha), np.sin(alpha)])
 
-    # Gather all points in the grid
-    points = [p for row in grid for p in row if p is not None]
+            # If the new point is outside the area, skip it
+            if not (0 <= q[0] < width and 0 <= q[1] < height):
+                continue
+
+            # Get the grid cell of the new point
+            gx, gy = grid_coords(q)
+
+            # Check if the new point is too close to other points
+            too_close = False
+
+            # Iterate over the 3x3 grid cell neighborhood of the new point
+            for x in range(max(gx - 1, 0), min(gx + 2, grid_width)):
+                for y in range(max(gy - 1, 0), min(gy + 2, grid_height)):
+                    # If the grid cell is not empty and the point in the cell is too close to the new point
+                    if grid[x][y] is not None and euclidean_distance(q, grid[x][y]) < r:
+                        too_close = True
+                        break
+                if too_close:
+                    break
+            if too_close:
+                continue
+
+            # If the new point is not too close to other points, add it to the active list and the grid
+            active_list.append(q)
+            grid[gx][gy] = q
+            points.append(q)
+
     # If the desired data type is 'int', convert the points to integers
     if data_type == 'int':
         return np.array(points).astype(int)
@@ -107,9 +99,9 @@ def poisson_disc_samples(width, height, r, seed=None, k=5, p=2, data_type='float
 
 
 if __name__ == "__main__":
-    width, height = 1000, 1000  # Dimensions of the area
-    r = 10  # Minimum distance between points
+    width, height = 2000, 2000  # Dimensions of the area
+    r = 5  # Minimum distance between points
     # Generate Poisson disc samples
     samples = poisson_disc_samples(
         width, height, r, data_type='int', seed=None)
-    print(samples)
+    write_profiles_to_file()
