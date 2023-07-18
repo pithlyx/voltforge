@@ -1,13 +1,14 @@
-from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import os
 from sqlalchemy import MetaData
-from flask_bcrypt import Bcrypt
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_restful import Api
 from flask_cors import CORS
-from dotenv import load_dotenv
-import os
-
+from flask_bcrypt import Bcrypt
+from cryptography.fernet import Fernet
+from flask_login import LoginManager
 load_dotenv()
 
 username = os.getenv('DB_USER')
@@ -15,7 +16,7 @@ password = os.getenv('DB_PASS')
 host = os.getenv('DB_HOST')
 port = os.getenv('DB_PORT')
 db_name = os.getenv('DB_NAME')
-connection_string = f'postgresql://{username}:{password}@{host}/{db_name}'
+connection_string = f'postgresql://{username}:{password}@{host}:{port}/{db_name}'
 
 # Create a metadata instance
 
@@ -35,13 +36,26 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
 migrate = Migrate(app, db)
+
+# Initialize LoginManager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
 db.init_app(app)
-
-
 api = Api(app)
 CORS(app)
 
-# python -c 'import os; print(os.urandom(16))'
 app.secret_key = os.getenv('SECRET')
 
 bcrypt = Bcrypt(app)
+
+fernet_key = os.getenv('FERNET')
+
+cipher_suite = Fernet(fernet_key)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    from models import User  # Import here to avoid circular import
+    return User.query.get(int(user_id))

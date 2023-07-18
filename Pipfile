@@ -8,6 +8,18 @@ numpy = "*"
 scipy = "*"
 matplotlib = "*"
 noise = "*"
+flask = "*"
+flask-sqlalchemy = "*"
+sqlalchemy = "*"
+flask-bcrypt = "*"
+flask-migrate = "*"
+flask-restful = "*"
+flask-cors = "*"
+python-dotenv = "*"
+psycopg2-binary = "*"
+flask-serialize = "*"
+sqlalchemy-serializer = "*"
+flask-login = "*"
 
 [dev-packages]
 
