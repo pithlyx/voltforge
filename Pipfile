@@ -20,6 +20,7 @@ psycopg2-binary = "*"
 flask-serialize = "*"
 sqlalchemy-serializer = "*"
 flask-login = "*"
+cryptography = "*"
 
 [dev-packages]
 

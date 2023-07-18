@@ -79,6 +79,13 @@ def create_user():
             return make_response(jsonify({'message': 'Invalid request!'}), 400)
 
 
+@app.route('/map/x/y', methods=['GET'])
+def get_map():
+    x = request.args.get('x')
+    y = request.args.get('y')
+    return make_response(jsonify({'message': f'x: {x}, y: {y}'}), 200)
+
+
 @app.route('/', methods=['GET'])
 def index():
     return make_response(jsonify({'message': 'Hello world!'}), 200)

@@ -28,6 +28,7 @@ class Map:
         self.kd_tree = cKDTree(self.samples)
         # Assign resources to the samples for 4 stages
         self.maps = [self.assign_resources(stage) for stage in range(4)]
+        self.maps = np.array(self.maps)
 
     def create_samples(self):
         """Generate samples using Poisson disc sampling.
@@ -51,19 +52,6 @@ class Map:
                           for resource in resource_names]
         # Randomly assign resources to the sample points according to the probabilities
         return np.random.choice(resource_names, size=len(self.samples), p=resource_probs)
-
-    def get_resource_at_point(self, point, stage):
-        """Get the resource at a given point and stage.
-        Args:
-            point (list): The point to get the resource at.
-            stage (int): The stage to get the resource at.
-        Returns:
-            str: The resource at the given point and stage.
-        """
-        # Query the kd-tree to find the nearest sample point to the given point
-        _, index = self.kd_tree.query(point)
-        # Return the resource assigned to the nearest sample point at the given stage
-        return self.maps[stage][index]
 
     def generate_perlin_noise(self, point, radius, frequency, octaves, persistence):
         """Generate a Perlin noise map around a given point.
