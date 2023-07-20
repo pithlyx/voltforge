@@ -183,6 +183,22 @@ class Map:
                                 min_x] = chunk[(j % self.chunk_size)][(i % self.chunk_size)]
         return region
 
+    def get_layers_at_point(self, x, y):
+        chunk_x = x // self.chunk_size
+        chunk_y = y // self.chunk_size
+        point_x = x % self.chunk_size
+        point_y = y % self.chunk_size
+
+        chunk_filename = f'chunks/chunk_{chunk_x*self.chunk_size}_{chunk_y*self.chunk_size}.pkl'
+        if not os.path.exists(chunk_filename):
+            raise ValueError(f"Chunk at ({x}, {y}) does not exist.")
+
+        with open(chunk_filename, 'rb') as f:
+            chunk = pickle.load(f)
+
+        layers = chunk[point_y][point_x]
+        return layers
+
 
 if __name__ == '__main__':
     map_object = Map()

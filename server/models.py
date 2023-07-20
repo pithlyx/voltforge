@@ -12,7 +12,7 @@ from flask_login import UserMixin
 
 class User(UserMixin, db.Model, SerializerMixin):
     __tablename__ = 'users'
-    serialize_rules = ('-password', '-city_id')
+    serialize_rules = ('-city', '-city_id')
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(), nullable=False)
@@ -42,39 +42,38 @@ def handle_security(mapper, connection, target):
     target.api_key = encrypted_key.decode()
 
 
-class City(db.Model):
+class City(db.Model, SerializerMixin):
     __tablename__ = 'cities'
+    serialize_rules = ('-users', '-outposts.city')
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
-    upgraded_at = db.Column(db.DateTime)
+    name = db.Column(db.String(120), nullable=False, unique=True)
     level = db.Column(db.Integer)
-    updated = db.Column(db.DateTime)
-    users = db.relationship('User', backref='cities', lazy=True)
-    outposts = db.relationship('Outpost', backref='cities', lazy=True)
+    users = db.relationship('User', backref='city', lazy=True)
+    outposts = db.relationship('Outpost', backref='city', lazy=True)
 
 
-class Outpost(db.Model):
+class Outpost(db.Model, SerializerMixin):
     __tablename__ = 'outposts'
+    serialize_rules = ('city.outposts', '-city_id')
 
     id = db.Column(db.Integer, primary_key=True)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'))
-    coord = db.Column(ARRAY(db.Integer))
+    coord = db.Column(JSON)
     level = db.Column(db.Integer)
     resources = db.Column(JSON)
     # Update relationship name
     buildings = db.relationship('Building', backref='outpost', lazy=True)
 
 
-class Building(db.Model):
+class Building(db.Model, SerializerMixin):
     __tablename__ = 'buildings'
-    serialize_only = ('id', 'building_id', 'level',
-                      'outpost_id', 'relative_pos', 'resource', 'rate')
+    serialize_rules = ('-outpost.buildings', '-outpost_id')
 
     id = db.Column(db.Integer, primary_key=True)
     building_id = db.Column(db.Integer)
     level = db.Column(db.Integer)
     outpost_id = db.Column(db.Integer, db.ForeignKey('outposts.id'))
-    relative_pos = db.Column(ARRAY(db.Integer))
+    coord = db.Column(JSON)
     resource = db.Column(db.String(120))
     rate = db.Column(db.Integer)

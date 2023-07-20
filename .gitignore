@@ -1,6 +1,7 @@
 Pipfile.lock
-./venv/
-./server/.env
-./server/proc_map/chunks/
-./client/package-lock.json
-./client/node_modules/
+/venv/
+/server/.env
+/client/package-lock.json
+/client/node_modules/
+/server/proc_map/chunks/
+/server/proc_map/logs/

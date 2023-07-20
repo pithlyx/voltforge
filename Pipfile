@@ -21,6 +21,7 @@ flask-serialize = "*"
 sqlalchemy-serializer = "*"
 flask-login = "*"
 cryptography = "*"
+tqdm = "*"
 
 [dev-packages]
 

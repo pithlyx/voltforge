@@ -9,7 +9,6 @@ function CreateUser() {
   const [email, setEmail] = useState('');
   const [verifyEmail, setVerifyEmail] = useState('');
   const [userValid, setUserValid] = useState(false);
-
   const [user, setUser] = useState({});
 
   useEffect(() => {
@@ -19,7 +18,8 @@ function CreateUser() {
   useEffect(() => {
     if (
       username.length > 3 &&
-      passStrength.score >= 2 &&
+      passStrength.score >= 0 &&
+      email &&
       email === verifyEmail &&
       password === verifyPassword
     ) {
@@ -45,12 +45,18 @@ function CreateUser() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        username,
-        password,
-        email,
+        username: username,
+        password: password,
+        email: email,
       }),
     });
-    return await response.json();
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message); // Throw an error if response is not ok
+    }
+
+    return data.user;
   };
 
   const handleCreate = async (e) => {
@@ -69,8 +75,13 @@ function CreateUser() {
       );
     }
     if (userValid) {
-      const data = await createUser();
-      setUser(data.user);
+      try {
+        const user = await createUser();
+        setUser(user);
+        window.location.href = '/login'; // Redirect to the login route
+      } catch (error) {
+        alert(error.message); // Display the error message as an alert
+      }
     }
   };
 
