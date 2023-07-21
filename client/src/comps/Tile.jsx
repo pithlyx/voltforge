@@ -129,7 +129,7 @@ const Tile = ({
   };
 
   // Render a different object depending on whether a building is present
-  return buildingId || isBuildingPresent ? (
+  return buildingId === 0 || buildingId || isBuildingPresent ? (
     <Image
       x={x * size}
       y={y * size}

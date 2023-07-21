@@ -108,10 +108,10 @@ def create_building(x, y, id, current_user):
         # This is a building
         # First, check if the building is within 20 units of an outpost
         outpost = Outpost.query.filter(text(
-            "abs((coord->>0)::int - :x) <= 20 and abs((coord->>1)::int - :y) <= 20 and city_id = :city_id")).params(x=x, y=y, city_id=current_user.city_id).order_by(text("abs((coord->>0)::int - :x) + abs((coord->>1)::int - :y)")).first()
+            "abs((coord->>0)::int - :x) <= 20 and abs((coord->>1)::int - :y) <= 10 and city_id = :city_id")).params(x=x, y=y, city_id=current_user.city_id).order_by(text("abs((coord->>0)::int - :x) + abs((coord->>1)::int - :y)")).first()
 
         if not outpost:
-            return handle_response('No outpost found within 20 units of this location!', 400)
+            return handle_response('No outpost found within 10 units of this location!', 400)
 
         building = Building(building_id=id, level=1, outpost_id=outpost.id, coord=[
             x, y], resource=None, rate=None)
@@ -306,6 +306,18 @@ def handle_buildings():
             return handle_response('There is already a building here!', 400)
 
         return create_building(x, y, id, current_user)
+
+    elif request.method == "DELETE":
+        data = get_request_data()
+        x = data.get('x')
+        y = data.get('y')
+        building = Building.query.filter(
+            text("(coord->>0)::int = :x and (coord->>1)::int = :y")).params(x=x, y=y).first()
+        if y and x and building and building.outpost.city_id == current_user.city_id:
+            db.session.delete(building)
+            db.session.commit()
+            return handle_response('Building deleted successfully!', 200)
+        return handle_response('Target building does not exist', 400)
 
 
 @app.route('/', methods=['GET'])
