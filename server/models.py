@@ -47,7 +47,7 @@ class City(db.Model, SerializerMixin):
     serialize_rules = ('-users', '-outposts.city')
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False, unique=True)
+    name = db.Column(db.String(120), nullable=False)
     level = db.Column(db.Integer)
     users = db.relationship('User', backref='city', lazy=True)
     outposts = db.relationship('Outpost', backref='city', lazy=True)

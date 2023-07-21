@@ -42,7 +42,7 @@ def login():
     elif request.method == 'GET':
         if current_user.is_authenticated:
             return make_response(jsonify({'message': 'Already logged in!'}), 200)
-        return make_response(jsonify({'message': 'Not logged in!'}), 200)
+        return make_response(jsonify({'message': 'Not logged in!'}), 400)
 
 
 @app.route('/logout', methods=['POST'])
@@ -52,7 +52,7 @@ def logout():
     return make_response(jsonify({'message': 'Logout successful!'}), 200)
 
 
-@app.route('/users', methods=['GET', 'POST'])
+@app.route('/users', methods=['GET', 'POST', "PATCH"])
 def create_user():
     if request.method == 'GET':
         print("getting users")
@@ -68,6 +68,8 @@ def create_user():
             rand_pos = [np.random.randint(5000), np.random.randint(5000)]
             if User.query.filter_by(username=username).first():
                 return make_response(jsonify({'message': 'User already exists!'}), 400)
+            if User.query.filter_by(email=email).first():
+                return make_response(jsonify({'message': 'Email already exists!'}), 400)
             user = User(username=username, password=password,
                         email=email, position=rand_pos)
             print(user.position)
@@ -79,7 +81,19 @@ def create_user():
             return make_response(jsonify({'message': 'Invalid request!'}), 400)
         except Exception as e:
             return make_response(jsonify({'message': f'Error: {e}'}), 400)
-
+    elif request.method == 'PATCH':
+        if current_user.is_authenticated:
+            data = request.get_json()
+            if data.get('username'):
+                current_user.username = data.get('username')
+            if data.get('password'):
+                current_user.password = data.get('password')
+            if data.get('email'):
+                current_user.email = data.get('email')
+            if data.get('position'):
+                current_user.position = data.get('position')
+            db.session.commit()
+            return make_response(jsonify({'message': 'User updated successfully!'}), 200)
 
 @app.route('/map', methods=['GET', 'POST'])
 @login_required
@@ -87,7 +101,7 @@ def handle_map():
     if request.method == 'GET':
         x = int(request.args.get('x') or current_user.position[0])
         y = int(request.args.get('y') or current_user.position[1])
-        r = int(request.args.get('r') or "50")
+        r = int(request.args.get('r') or "100")
         region = m.get_region(x, y, r)
 
         # Query for buildings and outposts within the specified range
@@ -96,17 +110,18 @@ def handle_map():
         outposts = Outpost.query.filter(text(
             "(coord->>0)::int between :xmin and :xmax and (coord->>1)::int between :ymin and :ymax")).params(xmin=x-r, xmax=x+r, ymin=y-r, ymax=y+r).all()
 
-        return make_response(jsonify({"x": x,
-                                      "y": y,
-                                      "r": r,
+        return make_response(jsonify({'center': [x, y],
                                       "map_data": region,
                                       "buildings": [building.to_dict() for building in buildings],
                                       "outposts": [outpost.to_dict() for outpost in outposts]}), 200)
     if request.method == 'POST':
         data = request.get_json()
-        building = data.get('building')
-        building.resource = m.get_layers_at_point(x, y)[building.stage]
-        return make_response(jsonify({"x": x}), 200)
+        print(data)
+        pos = data.get('closestTile')
+        current_user.position = pos
+        db.session.commit()
+        return make_response(jsonify({'message': 'Position updated successfully!',
+                                      'position': current_user.position}), 200)
 
 
 @app.route('/city', methods=['GET', 'POST'])

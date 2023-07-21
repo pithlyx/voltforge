@@ -10,14 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.14",
     "konva": "^9.2.0",
     "phaser": "^3.60.0",
+    "postcss": "^8.4.26",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-konva": "^18.2.10",
     "react-router": "^6.14.2",
     "react-router-dom": "^6.14.2",
     "simplex-noise": "^4.0.1",
+    "tailwindcss": "^3.3.3",
+    "use-image": "^1.1.1",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
