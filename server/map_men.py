@@ -43,6 +43,7 @@ class Menu(cmd.Cmd):
 
     def do_map(self, args):
         """Generate map"""
+        print("Generating map...")
         self.map.generate_map()
 
     def do_generate_chunks(self, args):
@@ -67,7 +68,7 @@ class Menu(cmd.Cmd):
         'Plot a region with the syntax: plot_region [x] [y] [r] [i]'
         x, y, r, i = map(int, arg.split())
         region = self.map.get_region(x, y, r, i)
-        
+
         # Create a new figure and axes
         fig, ax = plt.subplots()
 
@@ -75,14 +76,16 @@ class Menu(cmd.Cmd):
         keys = resources if i != 4 else overworld
 
         # Create a colormap and a normalization instance
-        cmap = plt.cm.colors.ListedColormap([val['color'] for val in keys.values()])
+        cmap = plt.cm.colors.ListedColormap(
+            [val['color'] for val in keys.values()])
         norm = plt.cm.colors.Normalize(vmin=0, vmax=len(keys) - 1)
 
         # Plot the region with the colormap
         ax.imshow(region, cmap=cmap, norm=norm)
 
         # Create a colorbar with the correct labels
-        cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax, ticks=range(len(keys)))
+        cbar = plt.colorbar(plt.cm.ScalarMappable(
+            cmap=cmap, norm=norm), ax=ax, ticks=range(len(keys)))
         cbar.ax.set_yticklabels(list(keys.keys()))
 
         # Show the plot

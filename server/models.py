@@ -1,5 +1,6 @@
 import secrets
 import uuid
+import re
 
 from sqlalchemy import event
 from sqlalchemy.orm import validates
@@ -20,6 +21,27 @@ class User(UserMixin, db.Model, SerializerMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'))
     position = db.Column(JSON)
+
+    @validates('username')
+    def validate_username(self, key, username):
+        if len(username) < 3 or not isinstance(username, str):
+            raise ValueError(
+                "Username must be at least 3 characters long and a string.")
+        return username
+
+    @validates('password')
+    def validate_password(self, key, password):
+        if len(password) < 4:
+            raise ValueError("Password must be at least 4 characters long.")
+        return password
+
+    @validates('email')
+    def validate_email(self, key, email):
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            raise ValueError(
+                "Invalid email format. It must contain '@' and '.' in the proper order.")
+        return email
 
     def auth(self, password=None, api_key=None):
         if password:

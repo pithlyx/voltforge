@@ -71,8 +71,9 @@ class Map:
     def generate_samples(self):
         self.samples = poisson_disc_samples(
             self.width, self.height, self.r, data_type='int', seed=self.seed)
-        print(f"Generated {len(self.samples)} samples.\nFirst 5 points: {self.samples[:5]}")
-    
+        print(
+            f"Generated {len(self.samples)} samples.\nFirst 5 points: {self.samples[:5]}")
+
     @profile
     def assign_resources_to_samples(self):
         sample_resources = []
@@ -92,17 +93,19 @@ class Map:
         for x in range(self.width):
             for y in range(self.height):
                 self.world_map[x][y] = snoise2(x/self.frequency,
-                                    y/self.frequency,
-                                    octaves=self.octaves,
-                                    persistence=self.persistence,
-                                    lacunarity=self.lacunarity,
-                                    repeatx=5000,
-                                    repeaty=5000,
-                                    base=self.seed)
+                                               y/self.frequency,
+                                               octaves=self.octaves,
+                                               persistence=self.persistence,
+                                               lacunarity=self.lacunarity,
+                                               repeatx=5000,
+                                               repeaty=5000,
+                                               base=self.seed)
 
     @profile
     def generate_map(self):
+        print("Generating Perlin noise map...")
         self.generate_perlin()
+        print("Generating Voronoi samples...")
         self.generate_samples()
         # Generate a grid of coordinates
         y, x = np.mgrid[0:self.height, 0:self.width]
@@ -116,8 +119,8 @@ class Map:
         # Assign terrain types based on Perlin noise map
         print("Assigning terrain types...")
         terrain_types = np.array([(attributes['id'], attributes['range'][0], attributes['range'][1])
-                                for terrain_type, attributes in overworld.items()],
-                                dtype=[('id', 'i4'), ('start', 'f4'), ('end', 'f4')])
+                                  for terrain_type, attributes in overworld.items()],
+                                 dtype=[('id', 'i4'), ('start', 'f4'), ('end', 'f4')])
         terrain_types.sort(order='start')  # Sort by start of range
         terrain_indices = np.searchsorted(
             terrain_types['start'], self.world_map.ravel(), side='right') - 1
@@ -139,7 +142,6 @@ class Map:
         voronoi_map[..., 4] = terrain_map
         self.generate_chunks(voronoi_map)
         return voronoi_map
-
 
     @profile
     def get_terrain_type(self, value):
@@ -167,7 +169,7 @@ class Map:
         max_x = min(self.width, x + r)
         max_y = min(self.height, y + r)
         region = [[[0]*5 for _ in range(max_x-min_x)]
-                for _ in range(max_y-min_y)]
+                  for _ in range(max_y-min_y)]
 
         # Calculate chunk coordinates for all points in the region
         chunk_coords = [(j // self.chunk_size, i // self.chunk_size)
@@ -188,13 +190,12 @@ class Map:
                 chunk_x, chunk_y = i // self.chunk_size, j // self.chunk_size
                 chunk = chunks[(chunk_x, chunk_y)]
                 value = chunk[(i % self.chunk_size)][(j % self.chunk_size)]
-                
+
                 # If layer is -1, we return all layers, otherwise we return the specified layer
                 if layer != -1:
                     value = value[layer] if len(value) > layer else None
                 region[j-min_y][i-min_x] = value
         return region
-
 
     def get_layers_at_point(self, x, y):
         chunk_x = x // self.chunk_size
@@ -217,6 +218,7 @@ class Map:
         plt.imshow(map_layer, cmap='terrain')  # adjust colormap as needed
         plt.colorbar()
         plt.show()
-        
+
+
 if __name__ == '__main__':
     map_object = Map()
