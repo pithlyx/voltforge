@@ -77,7 +77,7 @@ class City(db.Model, SerializerMixin):
 
 class Outpost(db.Model, SerializerMixin):
     __tablename__ = 'outposts'
-    serialize_rules = ('city.outposts', '-city_id')
+    serialize_rules = ('-city',)
 
     id = db.Column(db.Integer, primary_key=True)
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'))
@@ -90,7 +90,7 @@ class Outpost(db.Model, SerializerMixin):
 
 class Building(db.Model, SerializerMixin):
     __tablename__ = 'buildings'
-    serialize_rules = ('-outpost.buildings', '-outpost_id')
+    serialize_rules = ('-outpost',)
 
     id = db.Column(db.Integer, primary_key=True)
     building_id = db.Column(db.Integer)

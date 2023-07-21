@@ -9,6 +9,7 @@ import BuildingSelectionMenu from './BuildingSelectionMenu';
 
 // Map component
 const Map = ({ setLoggedIn }) => {
+  const [layerIndex, setLayerIndex] = useState(4);
   const [localMap, setLocalMap] = useState([]);
   const [localCenter, setLocalCenter] = useState([]);
   const [buildings, setBuildings] = useState([]);
@@ -54,6 +55,13 @@ const Map = ({ setLoggedIn }) => {
     }
   };
 
+  const handleQKey = (e) => {
+    if (e.key === 'q') {
+      // When 'q' is pressed, increment the layer index and wrap it around if it exceeds 4
+      setLayerIndex((layerIndex + 1) % 5);
+    }
+  };
+
   useEffect(() => {
     fetch('/api/map')
       .then((res) => {
@@ -80,6 +88,7 @@ const Map = ({ setLoggedIn }) => {
     window.addEventListener('resize', handleResize);
     window.addEventListener('keydown', handleEscape);
     window.addEventListener('keydown', handleEKey);
+    window.addEventListener('keydown', handleQKey);
     window.addEventListener('keydown', (e) =>
       handleKeyDown(e, stageRef.current, size, setPos)
     );
@@ -89,8 +98,9 @@ const Map = ({ setLoggedIn }) => {
       window.removeEventListener('keydown', handleEscape);
       window.removeEventListener('keydown', handleEKey);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleQKey);
     };
-  }, []);
+  }, [layerIndex]);
 
   return (
     <>
@@ -112,19 +122,24 @@ const Map = ({ setLoggedIn }) => {
                     y: localCenter[1] + (y - mapCenterIndex),
                   };
                   const localCoord = { x, y };
+
+                  // Get the buildingId for the current tile
+                  const currentBuildingId =
+                    buildings[`${mapCoord.x},${mapCoord.y}`];
+
                   return (
                     <Tile
-                      key={`${x},${y}`}
-                      terrain={tile[4]}
+                      key={`${x},${y},${currentBuildingId}`} // Include buildingId in the key
+                      terrain={tile}
                       x={x}
                       y={y}
                       size={size}
                       mapCoord={mapCoord}
                       localCoord={localCoord}
-                      buildingId={buildingId}
+                      selectedBuildingId={buildingId} // Pass buildingId as selectedBuildingId
                       buildings={buildings}
-                      setBuildingId={setBuildingId}
                       setBuildings={setBuildings}
+                      layerIndex={layerIndex}
                     />
                   );
                 })
