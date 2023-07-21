@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+numpy = "*"
+matplotlib = "*"
+scipy = "*"
+noise = "*"
+flask = "*"
+flask-sqlalchemy = "*"
+sqlalchemy = "*"
+flask-bcrypt = "*"
+flask-migrate = "*"
+flask-restful = "*"
+flask-cors = "*"
+python-dotenv = "*"
+psycopg2-binary = "*"
+flask-serialize = "*"
+sqlalchemy-serializer = "*"
+flask-login = "*"
+cryptography = "*"
+tqdm = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
